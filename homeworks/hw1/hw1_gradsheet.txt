@@ -1,0 +1,25 @@
+ECE357 Computer Operating Systems  Fall 2020
+Problem Set #1  Grading Sheet
+
+                                For liu14       Liu, Allister
+
+
+Notes & Comments
+
+
+38: in giving this error message, also include that you were trying to
+open the file FOR WRITING
+
+47: third param to write syscall is not needed unless O_CREAT, but it
+is harmless to include it
+
+86: once you detect the first binary character, you could terminate the
+for loop
+
+103-ish: partial write detection, no recovery
+
+
+
+-1        Problem 3 (program)
+
+9         TOTAL GRADE, PS1, "liu14      Liu, Allister"

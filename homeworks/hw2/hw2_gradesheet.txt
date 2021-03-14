@@ -1,0 +1,46 @@
+ECE357 Computer Operating Systems  Fall 2020
+Problem Set #2  Grading Sheet
+
+                                        For liu14       Liu, Allister
+
+
+Notes on Problems 1 and 2
+
+1C: OK, you said "not fragmented" which I will accept to mean the same
+thing as "contiguous"
+
+2A: your answer is incomplete.  since there are no hard links to directories,
+the count nlink==4 shows that there are two child subdirectories, each
+creating a .. link
+
+
+2B: your answer here and for 2A is very similar to Amy Leong's, or vice-versa,
+but you submitted separately.  I would say that you are implying the inode
+cache here, which is a factor, but the bigger factor is the dentry cache.
+
+
+2C i: your answer is just regurgitating the journal entries from the problem
+set sheet, without explaining the bigger picture (which is that a new
+file is created and then written to)
+
+2c ii: you were confused by the question.  I said "before" we replay the
+journal.  You answered what happens after the replay
+
+2c iv: I accept your answer as correct but just to be clear, with data=ordered
+or data=writeback, the file data themselves are never written to the
+journal.  The distinction is when the change to the inode's size and
+data block map is written to the journal vs when the actual data are
+written to disk.
+
+
+
+Notes and general comments on problem 3
+
+GROUP see son3
+
+
+          Problem 1 (block mapping)
+-1        Problem 2 (short-answer questions)
+-.5       Problem 3 (program)
+
+8.5       TOTAL GRADE, PS2, "liu14      Liu, Allister"

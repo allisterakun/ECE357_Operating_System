@@ -1,0 +1,427 @@
+//
+// Copyright 2020 Electronic Arts Inc.
+//
+// TiberianDawn.DLL and RedAlert.dll and corresponding source code is free 
+// software: you can redistribute it and/or modify it under the terms of 
+// the GNU General Public License as published by the Free Software Foundation, 
+// either version 3 of the License, or (at your option) any later version.
+
+// TiberianDawn.DLL and RedAlert.dll and corresponding source code is distributed 
+// in the hope that it will be useful, but with permitted additional restrictions 
+// under Section 7 of the GPL. See the GNU General Public License in LICENSE.TXT 
+// distributed with this program. You should have received a copy of the 
+// GNU General Public License along with permitted additional restrictions 
+// with this program. If not, see https://github.com/electronicarts/CnC_Remastered_Collection
+
+/* $Header:   F:\projects\c&c\vcs\code\aircraft.h_v   2.17   16 Oct 1995 16:47:48   JOE_BOSTIC  $ */
+/***********************************************************************************************
+ ***              C O N F I D E N T I A L  ---  W E S T W O O D  S T U D I O S               ***
+ ***********************************************************************************************
+ *                                                                                             *
+ *                 Project Name : Command & Conquer                                            *
+ *                                                                                             *
+ *                    File Name : AIRCRAFT.H                                                   *
+ *                                                                                             *
+ *                   Programmer : Joe L. Bostic                                                *
+ *                                                                                             *
+ *                   Start Date : July 22, 1994                                                *
+ *                                                                                             *
+ *                  Last Update : November 28, 1994 [JLB]                                      *
+ *                                                                                             *
+ *---------------------------------------------------------------------------------------------*
+ * Functions:                                                                                  *
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+#ifndef AIRCRAFT_H
+#define AIRCRAFT_H
+
+#include	"radio.h"
+#include	"fly.h"
+#include	"target.h"
+
+
+class AircraftClass : public FootClass, public FlyClass
+{
+	public:
+		/*
+		**	This is a pointer to the class control structure for the aircraft.
+		*/
+		AircraftTypeClass const * const Class;
+
+		//-----------------------------------------------------------------------------
+		void * operator new(size_t);
+		void operator delete(void *);
+		operator AircraftType(void) const {return Class->Type;};
+		AircraftClass(void) : Class(0) {};
+		AircraftClass(AircraftType classid, HousesType house);
+		virtual ~AircraftClass(void);
+		virtual RTTIType What_Am_I(void) const {return RTTI_AIRCRAFT;};
+
+		static void Init(void);
+		enum {FLIGHT_LEVEL=24};
+
+		virtual int Mission_Attack(void);
+		virtual int Mission_Unload(void);
+		virtual int Mission_Hunt(void);
+		virtual int Mission_Retreat(void);
+		virtual int Mission_Move(void);
+		virtual int Mission_Enter(void);
+		virtual int Mission_Guard(void);
+		virtual int Mission_Guard_Area(void);
+
+		/*
+		**	State machine support routines.
+		*/
+		bool  Process_Take_Off(void);
+		bool  Process_Landing(void);
+		int  Process_Fly_To(bool slowdown);
+
+		/*
+		**	Query functions.
+		*/
+		virtual int Threat_Range(int control) const;
+		virtual int Rearm_Delay(bool second) const;
+		virtual MoveType Can_Enter_Cell(CELL cell, FacingType facing=FACING_NONE) const;
+		virtual LayerType In_Which_Layer(void) const;
+		virtual ObjectTypeClass const & Class_Of(void) const {return *Class;};
+		virtual ActionType What_Action(ObjectClass * target) const;
+		virtual ActionType What_Action(CELL cell) const;
+		virtual DirType Desired_Load_Dir(ObjectClass * passenger, CELL & moveto) const;
+		virtual int Pip_Count(void) const;
+		TARGET  Good_Fire_Location(TARGET target) const;
+		bool  Cell_Seems_Ok(CELL cell, bool landing=false) const;
+		DirType  Pose_Dir(void) const;
+		TARGET  Good_LZ(void) const;
+		virtual DirType Fire_Direction(void) const;
+
+		/*
+		**	Landing zone support functionality.
+		*/
+		bool  Is_LZ_Clear(TARGET target) const;
+		TARGET  New_LZ(TARGET oldlz) const;
+
+		/*
+		**	Coordinate inquiry functions. These are used for both display and
+		**	combat purposes.
+		*/
+		virtual COORDINATE Sort_Y(void) const;
+		virtual COORDINATE Fire_Coord(int which) const;
+		virtual COORDINATE Target_Coord(void) const;
+
+		/*
+		**	Object entry and exit from the game system.
+		*/
+		virtual bool Unlimbo(COORDINATE , DirType facing = DIR_N);
+
+		/*
+		**	Display and rendering support functionality. Supports imagery and how
+		**	object interacts with the map and thus indirectly controls rendering.
+		*/
+		virtual int Exit_Object(TechnoClass *);
+		virtual bool Mark(MarkType mark=MARK_CHANGE);
+		virtual short const * Overlap_List(void) const;
+		virtual void Draw_It(int x, int y, WindowNumberType window);
+		virtual void Set_Speed(int speed);
+
+		/*
+		**	User I/O.
+		*/
+		virtual void Active_Click_With(ActionType action, ObjectClass * object);
+		virtual void Active_Click_With(ActionType action, CELL cell);
+		virtual void Player_Assign_Mission(MissionType mission, TARGET target=TARGET_NONE, TARGET destination=TARGET_NONE);
+		virtual void Response_Select(void);
+		virtual void Response_Move(void);
+		virtual void Response_Attack(void);
+
+		/*
+		**	Combat related.
+		*/
+//		virtual bool Target_Something_Nearby(ThreatType threat=THREAT_NORMAL);
+		virtual ResultType Take_Damage(int & damage, int distance, WarheadType warhead, TechnoClass * source);
+		virtual BulletClass * Fire_At(TARGET target, int which);
+		virtual TARGET As_Target(void) const;
+
+		/*
+		**	AI.
+		*/
+		virtual void AI(void);
+		virtual void Enter_Idle_Mode(bool initial = false);
+		virtual RadioMessageType Receive_Message(RadioClass * from, RadioMessageType message, long & param);
+		virtual void Scatter(COORDINATE threat, bool forced=false, bool nokidding=false);
+
+		/*
+		**	Scenario and debug support.
+		*/
+		#ifdef CHEAT_KEYS
+		virtual void Debug_Dump(MonoClass *mono) const;
+		#endif
+
+		/*
+		**	File I/O.
+		*/
+		static void  Read_INI(char *buffer);
+		static void  Write_INI(char *buffer);
+		static char * INI_Name(void) {return "AIRCRAFT";};
+		bool  Load(FileClass & file);
+		bool  Save(FileClass & file);
+		virtual void Code_Pointers(void);
+		virtual void Decode_Pointers(void);
+
+		/*
+		**	Dee-buggin' support.
+		*/
+		int Validate(void) const;
+
+	public:
+
+		/*
+		**	This is the facing used for the body of the aircraft. Typically, this is the same
+		**	as the PrimaryFacing, but in the case of helicopters, it can be different.
+		*/
+		FacingClass SecondaryFacing;
+
+	private:
+
+		/*
+		**	Aircraft can be in either state of landing, taking off, or in steady altitude.
+		**	These flags are used to control transition between flying and landing. It is
+		**	necessary to handle the transition in this manner so that it occurs smoothly
+		**	during the graphic processing section.
+		*/
+		unsigned IsLanding:1;
+		unsigned IsTakingOff:1;
+
+		/*
+		**	It is very common for aircraft to be homing in on a target. When this flag is
+		**	true, the aircraft will constantly adjust its facing toward the TarCom. When the
+		**	target is very close (one cell away or less), then this flag is automatically cleared.
+		**	This is because the homing algorithm is designed to get the aircraft to the destination
+		**	but no more. Checking when this flag is cleared is a way of flagging transition into
+		**	a new mode. Example: Transport helicopters go into a hovering into correct position
+		**	mode when the target is reached.
+		*/
+		unsigned IsHoming:1;
+
+		/*
+		**	Helicopters that are about to land must hover into a position exactly above the landing
+		**	zone. When this flag is true, the aircraft will be adjusted so that it is exactly over
+		**	the TarCom. The facing of the aircraft is not altered by this movement. The affect
+		**	like the helicopter is hovering and shifting sideways to position over the landing
+		**	zone. When the position is over the landing zone, then this flag is set to false.
+		*/
+		unsigned IsHovering:1;
+
+		/*
+		**	This is the jitter tracker to be used when the aircraft is a helicopter and
+		**	is flying. It is most noticable when the helicopter is hovering.
+		*/
+		unsigned char Jitter;
+
+	public:
+		/*
+		**	This is the altitude of the aircraft. It is expressed in pixels that
+		**	the shadow is offset to the south. If the altitude reaches zero, then
+		**	the aircraft has landed. The altitude for normal aircraft is at
+		**	Flight_Level().
+		*/
+		int Altitude;
+
+	private:
+
+		/*
+		**	This timer controls when the aircraft will reveal the terrain around itself.
+		**	When this timer expires and this aircraft has a sight range, then the
+		**	look around process will occur.
+		*/
+		TCountDownTimerClass SightTimer;
+
+		/*
+		**	Most attack aircraft can make several attack runs. This value contains the
+		**	number of attack runs the aircraft has left. When this value reaches
+		**	zero then the aircraft is technically out of ammo.
+		*/
+		char AttacksRemaining;
+
+		/*
+		** Some additional padding in case we need to add data to the class and maintain backwards compatibility for save/load
+		*/
+		unsigned char SaveLoadPadding[32];
+
+		/*
+		** This contains the value of the Virtual Function Table Pointer
+		*/
+		static void * VTable;
+};
+
+#endif
+夢(ゆめ)ならば
+どれほどよかったでしょう
+未(いま)だにあなたのことを夢(ゆめ)にみる
+忘(わす)れた物(もの)を
+取(と)りに帰(かえ)るように
+古(ふる)びた思(おも)い出(で)の
+埃(ほこり)を払(はら)う
+
+戻(もど)らない幸(しあわ)せがあることを
+最後(さいご)にあなたが教(おし)えてくれた
+言(い)えずに隠(かく)してた
+昏(くら)い過去(かこ)も
+あなたがいなきゃ
+永遠(えいえん)に昏(くら)いまま
+
+きっともうこれ以上(いじょう)
+傷(きず)つくことなど
+ありはしないとわかっている
+
+あの日(ひ)の悲(かな)しみさえ
+あの日(ひ)の苦(くる)しみさえ
+そのすべてを愛(あい)してた
+あなたとともに
+胸(むね)に残(のこ)り離(はな)れない
+苦(にが)いレモンの匂(にお)い
+雨(あめ)が降(ふ)り止(や)むまでは
+帰(かえ)れない
+今(いま)でもあなたはわたしの光(ひかり)
+
+暗闇(くらやみ)であなたの背(せ)をなぞった
+その輪郭(りんかく)を鮮明(せんめい)に
+覚(おぼ)えている
+受(う)け止(と)めきれないものと
+出会(であ)うたび
+溢(あふ)れてやまないのは涙(なみだ)だけ
+
+何(なに)をしていたの
+何(なに)を見(み)ていたの
+わたしの知(し)らない横顔(よこがお)で
+
+どこかであなたが今(いま)
+わたしと同(おな)じ様(よう)な
+涙(なみだ)にくれ
+淋(さび)しさの中(なか)にいるなら
+わたしのことなどどうか
+忘(わす)れてください
+そんなことを心(こころ)から願(ねが)うほどに
+今(いま)でもあなたはわたしの光(ひかり)
+
+自分(じぶん)が思(おも)うより
+恋(こい)をしていたあなたに
+あれから思(おも)うように
+息(いき)ができない
+あんなに側(そば)にいたのに
+まるで嘘(うそ)みたい
+とても忘(わす)れられない
+それだけが確(たし)か
+
+あの日(ひ)の悲(かな)しみさえ
+あの日(ひ)の苦(くる)しみさえ
+そのすべてを愛(あい)してた
+あなたとともに
+胸(むね)に残(のこ)り離(はな)れない
+苦(くる)いレモンの匂(にお)い
+雨(あめ)が降(ふ)り止(や)むまでは
+帰(かえ)れない
+切(き)り分(わ)けた果実(かじつ)の
+片方(かたほう)の様(よう)に
+今(いま)でもあなたはわたしの光(ひかり)
+
+如果这一切都是梦境该有多好
+至今还能在梦中寻到你的身影
+就像归家取回遗忘之物
+打扫尘封的记忆
+幸福无可再挽回
+是你最后告诉了我
+那些未对他人提及过的晦暗往事
+如果没有你它们将永远沉睡在黑暗中
+明白必定不会再有其他
+伤心胜过于此
+甚至那日的伤悲
+甚至那日的痛苦
+将所有一切，连同深爱的你一起
+都化作深深烙印在我心中的
+苦涩柠檬的香气
+在雨过天晴前都无法归去
+时至今日 你仍是我的光芒
+在黑暗中追寻着你的身影
+那轮廓至今仍鲜明地刻印于心
+每当遭遇无法承受的苦痛时
+汹涌不停的都只有泪水
+曾经历过什么
+曾目睹过什么
+脸上浮现着我不曾见过的神情
+如果你正在什么地方
+与我一样
+终日过着以泪洗面的寂寞生活
+就请你将我的一切全部遗忘吧
+我从心底里祈愿
+时至今日 你仍是我的光芒
+我深深地恋慕着你 甚至超出自己的想象
+自那以后 再不能随心呼吸
+明明曾如此贴近 如今却恍如虚幻
+唯一能确定的是 对你难以遗忘
+甚至那日的悲伤
+甚至那日的痛苦
+将所有一切，连同深爱的你一起
+都化作深深烙印在我心中的
+苦涩柠檬的香气
+在雨过天晴前都无法归去
+如同被切开的半个柠檬一般
+时至今日 你仍是我的光芒
+
+打上花火 - Akie秋绘
+词：米津玄師
+曲：米津玄師
+あの日見渡した渚を
+今も思い出すんだ
+砂の上に刻んだ言葉
+君の後ろ姿
+寄り返す波が
+足元をよぎり何かを攫う
+夕凪の中
+日暮れだけが通り過ぎて行く
+パッと光って咲いた
+花火を見ていた
+きっとまだ
+終わらない夏が
+曖昧な心を
+解かして繋いだ
+この夜が
+続いて欲しかった
+「あと何度君と
+同じ花火を見られるかな」って
+笑う顔に何ができるだろうか
+傷つくこと喜ぶこと
+繰り返す波と情動
+焦燥最終列車の音
+何度でも
+言葉にして君を呼ぶよ
+波間を選び
+もう一度
+もう二度と悲しまずに
+済むように
+はっと息を飲めば
+消えちゃいそうな光が
+きっとまだ
+胸に住んでいた
+手を伸ばせば触れた
+あったかい未来は
+ひそかに二人を見ていた
+パッと花火が
+夜に咲いた
+夜に咲いて
+静かに消えた
+離さないで
+もう少しだけ
+もう少しだけ
+このままで
+あの日見渡した渚を
+今も思い出すんだ
+砂の上に刻んだ言葉
+君の後ろ姿
+パッと光って咲いた
+花火を見ていた
+きっとまだ
+終わらない夏が
+曖昧な心を
+解かして繋いだ
+この夜が
+続いて欲しかった
